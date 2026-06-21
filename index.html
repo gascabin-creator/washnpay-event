@@ -176,13 +176,34 @@
       color: #555;
       margin-bottom: 4px;
     }
+    .account-number-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
     .account-number {
       font-size: 22px;
       font-weight: 800;
       color: #111;
       letter-spacing: 1px;
-      margin-bottom: 4px;
     }
+    .copy-btn {
+      border: none;
+      background: #4150d6;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 6px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .copy-btn:active { background: #2f3bb0; }
+    .copy-btn.copied { background: #2f9e44; }
     .account-name {
       font-size: 13px;
       color: #777;
@@ -196,6 +217,25 @@
       background: #fff0f0;
       border-radius: 8px;
       line-height: 1.5;
+    }
+
+    .admin-contact {
+      margin-top: 24px;
+      padding-top: 18px;
+      border-top: 1px solid #eee;
+      text-align: center;
+    }
+    .admin-label {
+      font-size: 11px;
+      color: #aaa;
+      margin-bottom: 6px;
+    }
+    .admin-phone {
+      display: inline-block;
+      font-size: 15px;
+      font-weight: 700;
+      color: #4150d6;
+      text-decoration: none;
     }
 
     .step-badge {
@@ -227,7 +267,10 @@
   <div class="account-box">
     <div class="account-label">입금 계좌</div>
     <div class="account-bank">🟡 카카오뱅크</div>
-    <div class="account-number">3333-05-3665280</div>
+    <div class="account-number-row">
+      <span class="account-number" id="accountNumber">3333-05-3665280</span>
+      <button type="button" class="copy-btn" id="copyBtn" onclick="copyAccount()">복사</button>
+    </div>
     <div class="account-name">예금주 · 양성철</div>
   </div>
 
@@ -292,6 +335,12 @@
     <strong>전송 버튼을 꼭 눌러주세요!</strong><br><br>
     입금 확인 후 자동으로 포인트가 적립됩니다.
   </p>
+
+  <!-- 관리자 연락처 -->
+  <div class="admin-contact">
+    <div class="admin-label">문의 / 관리자 연락처</div>
+    <a href="tel:01045229713" class="admin-phone">📞 010-4522-9713</a>
+  </div>
 </div>
 
 <script>
@@ -335,6 +384,34 @@
       box.textContent = "선택 후 여기에 내용이 표시됩니다";
       box.classList.add("empty");
       btn.disabled = true;
+    }
+  }
+
+  function copyAccount() {
+    const number = "3333053665280";
+    const btn = document.getElementById("copyBtn");
+    const done = () => {
+      btn.textContent = "복사됨";
+      btn.classList.add("copied");
+      setTimeout(() => {
+        btn.textContent = "복사";
+        btn.classList.remove("copied");
+      }, 1500);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(number).then(done).catch(fallbackCopy);
+    } else {
+      fallbackCopy();
+    }
+    function fallbackCopy() {
+      const t = document.createElement("textarea");
+      t.value = number;
+      t.style.position = "fixed";
+      t.style.opacity = "0";
+      document.body.appendChild(t);
+      t.select();
+      try { document.execCommand("copy"); done(); } catch (e) {}
+      document.body.removeChild(t);
     }
   }
 
