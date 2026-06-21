@@ -155,6 +155,49 @@
       margin: 20px 0;
     }
 
+    .account-box {
+      background: #fffbe6;
+      border: 1.5px solid #ffe066;
+      border-radius: 14px;
+      padding: 16px 18px;
+      margin-bottom: 22px;
+      text-align: center;
+    }
+    .account-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #b8860b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+    .account-bank {
+      font-size: 13px;
+      color: #555;
+      margin-bottom: 4px;
+    }
+    .account-number {
+      font-size: 22px;
+      font-weight: 800;
+      color: #111;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+    .account-name {
+      font-size: 13px;
+      color: #777;
+    }
+
+    .phone-hint {
+      font-size: 11px;
+      color: #e03030;
+      margin-top: 6px;
+      padding: 6px 10px;
+      background: #fff0f0;
+      border-radius: 8px;
+      line-height: 1.5;
+    }
+
     .step-badge {
       display: inline-block;
       width: 22px;
@@ -178,7 +221,15 @@
     <span class="logo-text">🧺 Wash&PAY</span>
   </div>
   <h1>5만원 이벤트 충전 신청</h1>
-  <p class="subtitle">입금 후 아래 정보를 선택하고 문자를 보내주세요</p>
+  <p class="subtitle">아래 계좌로 입금 후 정보를 선택해 주세요</p>
+
+  <!-- 입금 계좌 -->
+  <div class="account-box">
+    <div class="account-label">입금 계좌</div>
+    <div class="account-bank">🟡 카카오뱅크</div>
+    <div class="account-number">3333-05-3665280</div>
+    <div class="account-name">예금주 · 양성철</div>
+  </div>
 
   <!-- 지점 선택 -->
   <div class="section">
@@ -210,9 +261,10 @@
 
   <!-- 전화번호 -->
   <div class="section">
-    <div class="section-label"><span class="step-badge">3</span>워시앤페이 가입 전화번호</div>
+    <div class="section-label"><span class="step-badge">3</span>워시앤페이 앱 가입 전화번호</div>
     <input type="tel" id="phone" placeholder="010-0000-0000"
       oninput="formatPhone(this)" onchange="updateSummary()" maxlength="13" />
+    <div class="phone-hint">⚠️ 반드시 워시앤페이 앱에 가입된 번호를 입력해 주세요.<br>앱 미가입 시 포인트 적립이 불가합니다.</div>
   </div>
 
   <!-- 이름 (선택) -->
