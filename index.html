@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>워시앤페이 이벤트 충전 신청</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+      background: #f0f4ff;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 24px 16px 48px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+      width: 100%;
+      max-width: 420px;
+      padding: 28px 24px 32px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .logo img { width: 36px; height: 36px; border-radius: 8px; }
+    .logo-text { font-size: 18px; font-weight: 800; color: #3355ff; }
+
+    h1 {
+      font-size: 20px;
+      font-weight: 700;
+      color: #111;
+      margin-bottom: 4px;
+    }
+    .subtitle {
+      font-size: 13px;
+      color: #888;
+      margin-bottom: 24px;
+    }
+
+    .section { margin-bottom: 22px; }
+    .section-label {
+      font-size: 13px;
+      font-weight: 700;
+      color: #444;
+      margin-bottom: 10px;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .choice-btn {
+      flex: 1;
+      padding: 14px 8px;
+      border: 2px solid #dde1f0;
+      border-radius: 12px;
+      background: #f7f8ff;
+      font-size: 14px;
+      font-weight: 600;
+      color: #555;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .choice-btn .sub {
+      display: block;
+      font-size: 11px;
+      font-weight: 400;
+      color: #888;
+      margin-top: 3px;
+    }
+    .choice-btn.active {
+      border-color: #3355ff;
+      background: #eef1ff;
+      color: #3355ff;
+    }
+    .choice-btn.active .sub { color: #3355ff; }
+
+    input[type="tel"], input[type="text"] {
+      width: 100%;
+      padding: 14px 16px;
+      border: 2px solid #dde1f0;
+      border-radius: 12px;
+      font-size: 16px;
+      color: #222;
+      outline: none;
+      transition: border-color 0.15s;
+      background: #f7f8ff;
+    }
+    input:focus { border-color: #3355ff; background: #fff; }
+    input::placeholder { color: #aaa; }
+
+    .optional-label {
+      font-size: 11px;
+      color: #aaa;
+      margin-left: 6px;
+      font-weight: 400;
+    }
+
+    .summary-box {
+      background: #f0f4ff;
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-size: 14px;
+      color: #3355ff;
+      font-weight: 600;
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .summary-box.empty { color: #aaa; font-weight: 400; }
+
+    .send-btn {
+      width: 100%;
+      padding: 16px;
+      background: #3355ff;
+      color: #fff;
+      border: none;
+      border-radius: 14px;
+      font-size: 17px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 24px;
+      transition: background 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .send-btn:active { background: #1133cc; }
+    .send-btn:disabled { background: #c0c8e8; cursor: not-allowed; }
+
+    .note {
+      font-size: 12px;
+      color: #aaa;
+      text-align: center;
+      margin-top: 12px;
+      line-height: 1.6;
+    }
+    .note strong { color: #888; }
+
+    .divider {
+      height: 1px;
+      background: #eee;
+      margin: 20px 0;
+    }
+
+    .step-badge {
+      display: inline-block;
+      width: 22px;
+      height: 22px;
+      background: #3355ff;
+      color: #fff;
+      border-radius: 50%;
+      font-size: 12px;
+      font-weight: 700;
+      text-align: center;
+      line-height: 22px;
+      margin-right: 6px;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+<div class="card">
+
+  <div class="logo">
+    <span class="logo-text">🧺 Wash&PAY</span>
+  </div>
+  <h1>5만원 이벤트 충전 신청</h1>
+  <p class="subtitle">입금 후 아래 정보를 선택하고 문자를 보내주세요</p>
+
+  <!-- 지점 선택 -->
+  <div class="section">
+    <div class="section-label"><span class="step-badge">1</span>지점 선택</div>
+    <div class="btn-row">
+      <button class="choice-btn" data-group="branch" data-value="별내점" onclick="select(this)">
+        별내점
+      </button>
+      <button class="choice-btn" data-group="branch" data-value="별내카페거리점" onclick="select(this)">
+        별내카페거리점
+      </button>
+    </div>
+  </div>
+
+  <!-- 가방 선택 -->
+  <div class="section">
+    <div class="section-label"><span class="step-badge">2</span>세탁 가방</div>
+    <div class="btn-row">
+      <button class="choice-btn" data-group="bag" data-value="가방O" onclick="select(this)">
+        필요해요
+        <span class="sub">60,000원 충전</span>
+      </button>
+      <button class="choice-btn" data-group="bag" data-value="가방X" onclick="select(this)">
+        필요없어요
+        <span class="sub">65,000원 충전</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 전화번호 -->
+  <div class="section">
+    <div class="section-label"><span class="step-badge">3</span>포인트 받을 전화번호</div>
+    <input type="tel" id="phone" placeholder="010-0000-0000"
+      oninput="formatPhone(this)" onchange="updateSummary()" maxlength="13" />
+  </div>
+
+  <!-- 이름 (선택) -->
+  <div class="section">
+    <div class="section-label">
+      <span class="step-badge">4</span>이름
+      <span class="optional-label">(선택 — 동명이인 구분용)</span>
+    </div>
+    <input type="text" id="name" placeholder="홍길동" oninput="updateSummary()" />
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- 미리보기 -->
+  <div class="section-label" style="margin-bottom:8px">발송될 문자 미리보기</div>
+  <div class="summary-box empty" id="summary">선택 후 여기에 내용이 표시됩니다</div>
+
+  <!-- 발송 버튼 -->
+  <button class="send-btn" id="sendBtn" disabled onclick="sendSMS()">
+    📱 문자 보내기
+  </button>
+
+  <p class="note">
+    버튼을 누르면 문자앱이 열립니다.<br>
+    <strong>전송 버튼을 꼭 눌러주세요!</strong><br><br>
+    입금 확인 후 자동으로 포인트가 적립됩니다.
+  </p>
+</div>
+
+<script>
+  const OWNER_PHONE = "01045229713";
+  const state = { branch: "", bag: "" };
+
+  function select(btn) {
+    const group = btn.dataset.group;
+    document.querySelectorAll(`[data-group="${group}"]`).forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    state[group] = btn.dataset.value;
+    updateSummary();
+  }
+
+  function formatPhone(input) {
+    let v = input.value.replace(/\D/g, "").slice(0, 11);
+    if (v.length <= 3) input.value = v;
+    else if (v.length <= 7) input.value = v.slice(0,3) + "-" + v.slice(3);
+    else input.value = v.slice(0,3) + "-" + v.slice(3,7) + "-" + v.slice(7);
+    updateSummary();
+  }
+
+  function buildBody() {
+    const phone = document.getElementById("phone").value.trim();
+    const name  = document.getElementById("name").value.trim();
+    if (!state.branch || !state.bag || phone.replace(/\D/g,"").length < 10) return null;
+    let body = `[WNP]${state.branch}/${state.bag}/${phone}`;
+    if (name) body += `/${name}`;
+    return body;
+  }
+
+  function updateSummary() {
+    const body = buildBody();
+    const box  = document.getElementById("summary");
+    const btn  = document.getElementById("sendBtn");
+    if (body) {
+      box.textContent = body;
+      box.classList.remove("empty");
+      btn.disabled = false;
+    } else {
+      box.textContent = "선택 후 여기에 내용이 표시됩니다";
+      box.classList.add("empty");
+      btn.disabled = true;
+    }
+  }
+
+  function sendSMS() {
+    const body = buildBody();
+    if (!body) return;
+    window.location.href = `sms:${OWNER_PHONE}?body=${encodeURIComponent(body)}`;
+  }
+</script>
+</body>
+</html>
