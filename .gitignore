@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.env
+gcp-key.json
+*.log
+*.png
+*.txt
+!requirements.txt
+platform-tools/
+platform-tools.zip
+landing/
+.claude/settings.local.json
