@@ -45,9 +45,10 @@ def find_target_row(page, phone_last4: str, name: str = None):
     검색 결과 테이블에서 조건에 맞는 행(row)을 반환한다.
 
     매칭 우선순위:
-    1순위 - 이름 제공 시: 뒤 4자리 필터 후 이름으로 최종 확정 (이름 미일치 → 오류)
-    2순위 - 이름 미제공 + 1명 일치: 해당 행 반환
-    3순위 - 이름 미제공 + 여러 명 일치: 이름 요구 오류
+    1순위 - 뒤 4자리 일치가 1명뿐: 이름이 다르거나 없어도 그 고객으로 확정
+            (웹폼의 이름란은 "선택 — 동명이인 구분용"이라 후보가 1명이면 이름은 참고용일 뿐)
+    2순위 - 뒤 4자리 일치가 여러 명 + 이름 제공: 이름으로 최종 확정 (이름 미일치 → 오류)
+    3순위 - 뒤 4자리 일치가 여러 명 + 이름 미제공: 이름 요구 오류
     4순위 - 일치 없음: 오류 메시지 출력
     """
     rows = page.locator("table tbody tr").all()
@@ -74,10 +75,18 @@ def find_target_row(page, phone_last4: str, name: str = None):
 
     names_found = [n for n, _ in phone_matched]
 
-    # 1순위 + 3순위: 이름 제공 시 → 뒤 4자리 필터 결과에서 이름으로 최종 확정
+    # 1순위: 뒤 4자리 일치가 1명뿐이면 이름 무관하게 확정
+    if len(phone_matched) == 1:
+        cust_name, row = phone_matched[0]
+        if name and cust_name != name:
+            print(f"    → 고객 확인: {cust_name} (뒤 4자리 {phone_last4}, 입력한 이름 '{name}'과 다르지만 유일 일치)")
+        else:
+            print(f"    → 고객 확인: {cust_name} (뒤 4자리 {phone_last4})")
+        return row
+
+    # 여러 명 일치 시에만 이름으로 구분 (동명이인 보호)
     if name:
-        if len(phone_matched) > 1:
-            print(f"    → 뒤 4자리 '{phone_last4}' 일치 {len(phone_matched)}명: {', '.join(names_found)}")
+        print(f"    → 뒤 4자리 '{phone_last4}' 일치 {len(phone_matched)}명: {', '.join(names_found)}")
         name_matched = [(n, r) for n, r in phone_matched if n == name]
         if not name_matched:
             raise ValueError(
@@ -88,13 +97,7 @@ def find_target_row(page, phone_last4: str, name: str = None):
         print(f"    → 고객 확인: {cust_name} (뒤 4자리 {phone_last4} + 이름 매칭)")
         return row
 
-    # 2순위: 이름 미제공 + 1명만 일치 → 바로 반환
-    if len(phone_matched) == 1:
-        cust_name, row = phone_matched[0]
-        print(f"    → 고객 확인: {cust_name} (뒤 4자리 {phone_last4})")
-        return row
-
-    # 3순위 예외: 이름 미제공 + 여러 명 일치 → 이름 요구
+    # 3순위: 이름 미제공 + 여러 명 일치 → 이름 요구
     raise ValueError(
         f"동일한 뒤 4자리를 가진 고객이 {len(phone_matched)}명입니다. "
         f"이름을 지정해 주세요.\n"
