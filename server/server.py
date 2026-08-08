@@ -160,6 +160,13 @@ def register():
     if result.returncode != 0:
         err = result.stderr.strip() or result.stdout.strip()
         log.error(f"[REGISTER] 실패: {err}")
+        # 전화번호로 아예 검색되지 않음 = 앱에서 이 지점을 즐겨찾기(지점 등록) 안 한 경우가 대부분
+        if "해당하는 고객이 없습니다" in err or "검색 결과가 없습니다" in err:
+            return jsonify({
+                "success": False,
+                "error": "워시앤페이 앱에서 지점 등록(즐겨찾기) 후 다시 시도해 주세요.",
+                "error_type": "not_registered",
+            }), 400
         if "없습니다" in err:
             return jsonify({"success": False, "error": "워시앤페이 앱에 가입된 번호를 확인해 주세요."}), 400
         return jsonify({"success": False, "error": "포인트 적립 중 오류가 발생했습니다. 관리자에게 문의해 주세요."}), 500

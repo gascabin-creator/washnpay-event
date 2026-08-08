@@ -152,6 +152,17 @@
       cursor: pointer; -webkit-tap-highlight-color: transparent;
     }
 
+    /* ── 지점 미등록 안내 화면 ── */
+    #notRegisteredView { display: none; text-align: center; }
+    .guide-steps { text-align: left; margin: 4px 0 24px; }
+    .guide-step { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 14px; }
+    .guide-step:last-child { margin-bottom: 0; }
+    .guide-step-num {
+      flex-shrink: 0; width: 22px; height: 22px; background: #4150d6; color: #fff;
+      border-radius: 50%; font-size: 12px; font-weight: 700; text-align: center; line-height: 22px;
+    }
+    .guide-step-text { font-size: 14px; color: #333; line-height: 1.55; padding-top: 1px; }
+
     /* ── 관리자 ── */
     .admin-contact { margin-top: 24px; padding-top: 18px; border-top: 1px solid #eee; text-align: center; }
     .admin-label { font-size: 11px; color: #aaa; margin-bottom: 6px; }
@@ -280,6 +291,41 @@
     </div>
   </div>
 
+  <!-- ══ 지점 미등록 안내 화면 ══════════════════════════════════════════ -->
+  <div id="notRegisteredView">
+    <div class="error-icon">📍</div>
+    <div class="error-title">지점 등록이 필요해요</div>
+    <div class="error-msg">
+      워시앤페이 앱에서 매장을 즐겨찾기(지점 등록)해야<br>포인트 적립이 가능해요.<br>아래 방법대로 등록 후 다시 신청해 주세요.
+    </div>
+
+    <div class="guide-steps">
+      <div class="guide-step">
+        <div class="guide-step-num">1</div>
+        <div class="guide-step-text">워시앤페이 앱 하단의 <strong>🔍 지점찾기</strong> 탭을 눌러주세요.</div>
+      </div>
+      <div class="guide-step">
+        <div class="guide-step-num">2</div>
+        <div class="guide-step-text">지도에서 이동/검색해서 <strong>워시앤조이 별내점</strong> 또는 <strong>워시앤조이 별내카페거리점</strong>을 찾아주세요.</div>
+      </div>
+      <div class="guide-step">
+        <div class="guide-step-num">3</div>
+        <div class="guide-step-text">지점 상세 화면에서 <strong>⭐ 별표</strong>를 눌러 즐겨찾기에 등록해주세요.</div>
+      </div>
+      <div class="guide-step">
+        <div class="guide-step-num">4</div>
+        <div class="guide-step-text">등록 후 이 페이지로 돌아와 다시 신청해주세요.</div>
+      </div>
+    </div>
+
+    <button class="retry-btn" onclick="reset()">다시 시도하기</button>
+
+    <div class="admin-contact" style="margin-top:20px">
+      <div class="admin-label">등록 방법을 모르겠으면 관리자에게 연락해 주세요</div>
+      <a href="tel:01045229713" class="admin-phone">📞 010-4522-9713</a>
+    </div>
+  </div>
+
 </div>
 
 <script>
@@ -322,7 +368,7 @@
   }
 
   function show(id) {
-    ["formView","loadingView","successView","errorView"].forEach(v => {
+    ["formView","loadingView","successView","errorView","notRegisteredView"].forEach(v => {
       document.getElementById(v).style.display = (v === id) ? "block" : "none";
     });
   }
@@ -355,6 +401,8 @@
           document.getElementById("bagBox").style.display = "none";
         }
         show("successView");
+      } else if (data.error_type === "not_registered") {
+        show("notRegisteredView");
       } else {
         document.getElementById("errorMsg").textContent = data.error || "알 수 없는 오류가 발생했습니다.";
         show("errorView");
