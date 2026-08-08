@@ -57,9 +57,12 @@
     }
     .copy-btn.copied { background: #2f9e44; }
     .account-name { font-size: 13px; color: #777; }
+    .account-amount-row { margin-top: 10px; }
+    .account-amount-value { font-size: 20px; font-weight: 800; color: #e07b00; }
 
     /* ── 선택 버튼 ── */
     .btn-row { display: flex; gap: 10px; }
+    .btn-row-2x2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .choice-btn {
       flex: 1; padding: 14px 8px; border: 2px solid #ccd1f0;
       border-radius: 12px; background: #f3f4fc;
@@ -161,7 +164,7 @@
   <!-- ══ 폼 화면 ══════════════════════════════════════════ -->
   <div id="formView">
     <div class="logo-text">🧺 Wash&PAY</div>
-    <h1>5만원 이벤트 충전 신청</h1>
+    <h1>이벤트 포인트 충전 신청</h1>
     <p class="subtitle">아래 계좌로 입금 후 정보를 입력해 주세요</p>
 
     <div class="account-box">
@@ -172,6 +175,9 @@
         <button type="button" class="copy-btn" id="copyBtn" onclick="copyAccount()">복사</button>
       </div>
       <div class="account-name">예금주 · 양성철</div>
+      <div class="account-amount-row" id="accountAmountRow" style="display:none">
+        <span class="account-amount-value" id="accountAmountValue"></span> 입금
+      </div>
     </div>
 
     <div class="section">
@@ -186,16 +192,34 @@
       <div class="section-label"><span class="step-badge">2</span>세탁 가방</div>
       <div class="btn-row">
         <button class="choice-btn" data-group="bag" data-value="가방O" onclick="select(this)">
-          필요해요<span class="sub">60,000원 충전</span>
+          필요해요<span class="sub">회당 60,000원</span>
         </button>
         <button class="choice-btn" data-group="bag" data-value="가방X" onclick="select(this)">
-          필요없어요<span class="sub">65,000원 충전</span>
+          필요없어요<span class="sub">회당 65,000원</span>
         </button>
       </div>
     </div>
 
     <div class="section">
-      <div class="section-label"><span class="step-badge">3</span>워시앤페이 앱 가입 전화번호</div>
+      <div class="section-label"><span class="step-badge">3</span>충전 횟수</div>
+      <div class="btn-row-2x2">
+        <button class="choice-btn" data-group="count" data-value="1" onclick="select(this)">
+          1회<span class="sub">5만원 입금</span>
+        </button>
+        <button class="choice-btn" data-group="count" data-value="2" onclick="select(this)">
+          2회<span class="sub">10만원 입금</span>
+        </button>
+        <button class="choice-btn" data-group="count" data-value="3" onclick="select(this)">
+          3회<span class="sub">15만원 입금</span>
+        </button>
+        <button class="choice-btn" data-group="count" data-value="4" onclick="select(this)">
+          4회<span class="sub">20만원 입금</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label"><span class="step-badge">4</span>워시앤페이 앱 가입 전화번호</div>
       <input type="tel" id="phone" placeholder="010-0000-0000"
         oninput="formatPhone(this)" maxlength="13" />
       <div class="phone-hint">⚠️ 반드시 워시앤페이 앱에 가입된 번호를 입력해 주세요.</div>
@@ -203,7 +227,7 @@
 
     <div class="section">
       <div class="section-label">
-        <span class="step-badge">4</span>이름
+        <span class="step-badge">5</span>이름
         <span class="optional-label">(선택 — 동명이인 구분용)</span>
       </div>
       <input type="text" id="name" placeholder="홍길동" />
@@ -260,13 +284,26 @@
 
 <script>
   const API = "https://washnpay-event-362260552802.asia-northeast3.run.app/register";
-  const state = { branch: "", bag: "" };
+  const state = { branch: "", bag: "", count: "" };
+
+  function updateAmountDisplay() {
+    const count = parseInt(state.count) || 0;
+    const amountRow = document.getElementById("accountAmountRow");
+    if (count > 0) {
+      document.getElementById("accountAmountValue").textContent =
+        (50000 * count).toLocaleString("ko-KR") + "원";
+      amountRow.style.display = "";
+    } else {
+      amountRow.style.display = "none";
+    }
+  }
 
   function select(btn) {
     const group = btn.dataset.group;
     document.querySelectorAll(`[data-group="${group}"]`).forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
     state[group] = btn.dataset.value;
+    updateAmountDisplay();
     updateBtn();
   }
 
@@ -280,20 +317,20 @@
 
   function updateBtn() {
     const phone = document.getElementById("phone").value.replace(/\D/g, "");
-    const ok = state.branch && state.bag && phone.length >= 10;
+    const ok = state.branch && state.bag && state.count && phone.length >= 10;
     document.getElementById("sendBtn").disabled = !ok;
   }
 
   function show(id) {
     ["formView","loadingView","successView","errorView"].forEach(v => {
-      document.getElementById(v).style.display = (v === id) ? "" : "none";
+      document.getElementById(v).style.display = (v === id) ? "block" : "none";
     });
   }
 
   async function submit() {
     const phone = document.getElementById("phone").value.trim();
     const name  = document.getElementById("name").value.trim();
-    if (!state.branch || !state.bag || phone.replace(/\D/g,"").length < 10) return;
+    if (!state.branch || !state.bag || !state.count || phone.replace(/\D/g,"").length < 10) return;
 
     show("loadingView");
 
@@ -301,7 +338,7 @@
       const res = await fetch(API, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ branch: state.branch, bag: state.bag, phone, name }),
+        body: JSON.stringify({ branch: state.branch, bag: state.bag, phone, name, count: parseInt(state.count) }),
       });
       const data = await res.json();
 
@@ -313,7 +350,7 @@
 
         if (data.bag_info) {
           document.getElementById("bagText").textContent = data.bag_info;
-          document.getElementById("bagBox").style.display = "";
+          document.getElementById("bagBox").style.display = "block";
         } else {
           document.getElementById("bagBox").style.display = "none";
         }
@@ -329,8 +366,13 @@
   }
 
   function reset() {
+    state.branch = ""; state.bag = ""; state.count = "";
+    document.querySelectorAll(".choice-btn").forEach(b => b.classList.remove("active"));
+    document.getElementById("phone").value = "";
+    document.getElementById("name").value = "";
+    updateAmountDisplay();
+    updateBtn();
     show("formView");
-    document.getElementById("bagBox").style.display = "none";
   }
 
   function copyAccount() {
