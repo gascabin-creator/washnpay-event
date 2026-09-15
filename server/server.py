@@ -81,8 +81,8 @@ def _send_email(subject: str, body: str) -> None:
         log.error(f"[EMAIL] 오류: {e}")
 
 
-def _run_script(phone_last4: str, amount: str, name: str = None, branch: str = "별내카페거리점"):
-    cmd = [sys.executable, SCRIPT_PATH, phone_last4, amount, name or "", branch]
+def _run_script(phone_last4: str, amount: str, name: str = None, branch: str = "별내카페거리점", full_phone: str = None):
+    cmd = [sys.executable, SCRIPT_PATH, phone_last4, amount, name or "", branch, full_phone or ""]
     try:
         result = subprocess.run(
             cmd, capture_output=True, text=True, encoding="utf-8", timeout=120
@@ -151,7 +151,7 @@ def register():
         _recent[dedup_key] = now
 
     log.info(f"[REGISTER] {branch} {phone_last4} {amount}원 {count}회 (이름={cust_name})")
-    result = _run_script(phone_last4, amount, cust_name, branch)
+    result = _run_script(phone_last4, amount, cust_name, branch, full_phone)
 
     if result is None:
         log.error("[REGISTER] 타임아웃")
@@ -166,6 +166,13 @@ def register():
                 "success": False,
                 "error": "워시앤페이 앱에서 지점 등록(즐겨찾기) 후 다시 시도해 주세요.",
                 "error_type": "not_registered",
+            }), 400
+        # 뒤 4자리는 같지만 전체번호 중간자리가 달라 다른 사람 계정일 위험 (오적립 방지)
+        if "다른 분의 계정일 수 있습니다" in err:
+            return jsonify({
+                "success": False,
+                "error": "전화번호를 다시 확인해 주세요. 확인 후에도 문제가 있으면 관리자에게 연락해 주세요.",
+                "error_type": "phone_mismatch",
             }), 400
         if "없습니다" in err:
             return jsonify({"success": False, "error": "워시앤페이 앱에 가입된 번호를 확인해 주세요."}), 400
@@ -245,7 +252,7 @@ def webhook():
     # Playwright 포인트 적립을 동기적으로 실행 (완료 후 SMS 응답 반환)
     # → Cloud Run이 요청 처리 중 컨테이너를 종료하지 않음
     log.info(f"[PLAYWRIGHT] 시작: {phone_last4} {amount}원 {branch}")
-    result = _run_script(phone_last4, amount, cust_name, branch)
+    result = _run_script(phone_last4, amount, cust_name, branch, full_phone)
     if result is None:
         log.error("[PLAYWRIGHT] 타임아웃")
     elif result.returncode == 0:
