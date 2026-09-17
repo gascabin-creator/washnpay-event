@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>유튜브 모닝 알람</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+    background: #eceefa;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 24px 16px 48px;
+  }
+
+  .wrap { width: 100%; max-width: 460px; }
+
+  header { text-align: center; margin-bottom: 18px; }
+  .logo { font-size: 22px; font-weight: 800; color: #111; }
+  .tagline { font-size: 13px; color: #888; margin-top: 4px; }
+
+  .card {
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+    padding: 22px 20px 24px;
+    margin-bottom: 16px;
+  }
+
+  .form-title { font-size: 15px; font-weight: 800; color: #111; margin-bottom: 16px; }
+
+  .field-label { display: block; font-size: 12px; font-weight: 700; color: #555; margin: 14px 0 8px; }
+  .field-label:first-of-type { margin-top: 0; }
+  .hint { font-size: 11px; font-weight: 400; color: #aaa; }
+
+  input[type="text"], input[type="time"] {
+    width: 100%; padding: 13px 14px;
+    border: 2px solid #ccd1f0; border-radius: 12px;
+    font-size: 15px; color: #222; outline: none;
+    background: #f3f4fc;
+  }
+  input:focus { border-color: #4150d6; background: #fff; }
+  input::placeholder { color: #aaa; }
+
+  .preview {
+    display: none;
+    margin-top: 10px;
+    background: #f3f4fc;
+    border-radius: 14px;
+    padding: 10px;
+  }
+  .preview-player { width: 100%; aspect-ratio: 16/9; border-radius: 10px; overflow: hidden; background: #000; }
+  .preview-title { font-size: 12px; color: #666; margin-top: 8px; line-height: 1.4; }
+
+  .days-row { display: flex; gap: 6px; }
+  .day-btn {
+    flex: 1; padding: 10px 0; border: 2px solid #ccd1f0; border-radius: 10px;
+    background: #f3f4fc; font-size: 13px; font-weight: 700; color: #777;
+    cursor: pointer; -webkit-tap-highlight-color: transparent;
+  }
+  .day-btn.active { border-color: #4150d6; background: #4150d6; color: #fff; }
+
+  .switch-row { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+  .switch { position: relative; display: inline-block; width: 42px; height: 24px; flex-shrink: 0; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider { position: absolute; cursor: pointer; inset: 0; background: #ccd1f0; border-radius: 24px; transition: .15s; }
+  .slider::before { content: ""; position: absolute; height: 18px; width: 18px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: .15s; }
+  .switch input:checked + .slider { background: #4150d6; }
+  .switch input:checked + .slider::before { transform: translateX(18px); }
+  .switch-text { font-size: 13px; color: #666; }
+
+  .save-btn {
+    width: 100%; padding: 15px; background: #4150d6; color: #fff;
+    border: none; border-radius: 14px; font-size: 16px; font-weight: 700;
+    cursor: pointer; margin-top: 18px; -webkit-tap-highlight-color: transparent;
+  }
+  .save-btn:active { background: #2f3bb0; }
+  .cancel-edit-link {
+    display: none; text-align: center; font-size: 12px; color: #999;
+    margin-top: 10px; cursor: pointer; text-decoration: underline;
+  }
+
+  .alarm-list { display: flex; flex-direction: column; gap: 10px; }
+  .alarm-row {
+    display: flex; align-items: center; gap: 12px;
+    background: #f7f8fd; border-radius: 14px; padding: 12px 14px;
+  }
+  .alarm-row.disabled { opacity: 0.45; }
+  .alarm-thumb { width: 56px; height: 40px; border-radius: 8px; object-fit: cover; background: #ddd; flex-shrink: 0; }
+  .alarm-main { flex: 1; min-width: 0; }
+  .alarm-time { font-size: 20px; font-weight: 800; color: #111; }
+  .alarm-meta { font-size: 11px; color: #888; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .alarm-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .icon-btn {
+    border: none; background: none; font-size: 16px; cursor: pointer; padding: 4px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .empty-msg { text-align: center; font-size: 13px; color: #aaa; padding: 20px 0; }
+
+  .top-toggle { display: flex; align-items: center; justify-content: space-between; padding: 4px 4px 14px; }
+  .top-toggle-text { font-size: 12px; color: #777; }
+  .notice-btn {
+    font-size: 12px; font-weight: 700; color: #4150d6; background: #e3e6fa;
+    border: none; padding: 6px 10px; border-radius: 8px; cursor: pointer;
+  }
+
+  .caution {
+    font-size: 12px; color: #999; text-align: center; line-height: 1.6; padding: 0 8px;
+  }
+
+  /* ── 링잉 오버레이 ── */
+  .ring-overlay {
+    display: none;
+    position: fixed; inset: 0; background: #12141c; z-index: 999;
+    flex-direction: column; align-items: center; justify-content: center;
+    padding: 24px; text-align: center;
+  }
+  .ring-overlay.show { display: flex; }
+  .ring-clock { font-size: 48px; font-weight: 800; color: #fff; letter-spacing: 1px; }
+  .ring-label { font-size: 15px; color: #ffd43b; font-weight: 700; margin-top: 6px; margin-bottom: 18px; }
+  .ring-player { width: 100%; max-width: 400px; aspect-ratio: 16/9; border-radius: 14px; overflow: hidden; background: #000; }
+  .unmute-hint {
+    display: none; margin-top: 14px; font-size: 13px; color: #fff;
+    background: rgba(255,255,255,0.15); padding: 8px 16px; border-radius: 20px; cursor: pointer;
+  }
+  .ring-actions { display: flex; gap: 12px; margin-top: 26px; width: 100%; max-width: 400px; }
+  .snooze-btn, .stop-btn {
+    flex: 1; padding: 16px; border: none; border-radius: 14px;
+    font-size: 15px; font-weight: 700; cursor: pointer;
+  }
+  .snooze-btn { background: #3a3d4d; color: #fff; }
+  .stop-btn { background: #ff5252; color: #fff; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">⏰ 유튜브 모닝 알람</div>
+    <p class="tagline">좋아하는 유튜브 영상으로 하루를 시작해 보세요</p>
+  </header>
+
+  <div class="card">
+    <div class="top-toggle">
+      <span class="top-toggle-text">💤 대기 중 화면 꺼짐 방지</span>
+      <label class="switch"><input type="checkbox" id="wakeLockToggle" onchange="onWakeLockToggle()" /><span class="slider"></span></label>
+    </div>
+
+    <div class="form-title">➕ 새 알람 만들기</div>
+
+    <label class="field-label">유튜브 링크 또는 영상 ID</label>
+    <input type="text" id="videoInput" placeholder="https://youtu.be/..." oninput="onVideoInput()" />
+    <div class="preview" id="previewBox">
+      <div class="preview-player" id="previewPlayer"></div>
+      <div class="preview-title" id="previewTitle"></div>
+    </div>
+
+    <label class="field-label">시간</label>
+    <input type="time" id="timeInput" />
+
+    <label class="field-label">반복 요일 <span class="hint">(선택 안 하면 한 번만 울려요)</span></label>
+    <div class="days-row" id="daysRow"></div>
+
+    <label class="field-label">알람 이름 <span class="hint">(선택)</span></label>
+    <input type="text" id="labelInput" placeholder="예: 기상 알람" />
+
+    <label class="field-label">볼륨 서서히 높이기</label>
+    <div class="switch-row">
+      <label class="switch"><input type="checkbox" id="fadeInput" checked /><span class="slider"></span></label>
+      <span class="switch-text">낮은 볼륨에서 시작해서 서서히 커져요</span>
+    </div>
+
+    <button class="save-btn" id="saveBtn" onclick="saveAlarm()">알람 저장</button>
+    <div class="cancel-edit-link" id="cancelEditLink" onclick="cancelEdit()">수정 취소</div>
+  </div>
+
+  <div class="card">
+    <div class="form-title">📋 등록된 알람</div>
+    <div id="alarmList" class="alarm-list"></div>
+    <div id="emptyMsg" class="empty-msg">아직 등록된 알람이 없어요</div>
+  </div>
+
+  <p class="caution">
+    ⚠️ 이 앱은 브라우저 탭을 열어둔 상태에서만 동작해요.<br />
+    알람 시간에는 이 페이지를 켜두고, 기기가 잠자기 모드로 들어가지 않게 해주세요.
+  </p>
+</div>
+
+<div id="ringOverlay" class="ring-overlay">
+  <div class="ring-clock" id="ringClock">00:00:00</div>
+  <div class="ring-label" id="ringLabel">알람</div>
+  <div class="ring-player" id="ringPlayer"></div>
+  <div class="unmute-hint" id="unmuteHint" onclick="forceUnmute()">🔊 소리가 안 들리면 여기를 탭하세요</div>
+  <div class="ring-actions">
+    <button class="snooze-btn" onclick="snoozeAlarm()">5분 후 다시 알림</button>
+    <button class="stop-btn" onclick="stopAlarm()">알람 끄기</button>
+  </div>
+</div>
+
+<script src="https://www.youtube.com/iframe_api"></script>
+<script>
+  const STORAGE_KEY = "yt_morning_alarms";
+  const DAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
+
+  let alarms = loadAlarms();
+  let editingId = null;
+  let ytReady = false;
+  let ytQueue = [];
+  let previewPlayer = null;
+  let previewVideoId = null;
+  let ringPlayer = null;
+  let currentRingingAlarm = null;
+  let fadeInterval = null;
+  let clockInterval = null;
+  let wakeLock = null;
+
+  function loadAlarms() {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    } catch (e) { return []; }
+  }
+  function persist() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(alarms));
+  }
+
+  /* ── 요일 버튼 ── */
+  const daysRow = document.getElementById("daysRow");
+  DAY_LABELS.forEach((label, i) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "day-btn";
+    btn.dataset.day = i;
+    btn.textContent = label;
+    btn.onclick = () => btn.classList.toggle("active");
+    daysRow.appendChild(btn);
+  });
+  function getSelectedDays() {
+    return Array.from(daysRow.querySelectorAll(".day-btn.active")).map(b => Number(b.dataset.day)).sort();
+  }
+  function setSelectedDays(days) {
+    daysRow.querySelectorAll(".day-btn").forEach(b => {
+      b.classList.toggle("active", days.includes(Number(b.dataset.day)));
+    });
+  }
+
+  /* ── 유튜브 ID 추출 ── */
+  function extractVideoId(input) {
+    const s = (input || "").trim();
+    if (!s) return null;
+    if (/^[a-zA-Z0-9_-]{11}$/.test(s)) return s;
+    const patterns = [
+      /(?:youtu\.be\/)([a-zA-Z0-9_-]{11})/,
+      /(?:youtube\.com\/watch\?v=)([a-zA-Z0-9_-]{11})/,
+      /(?:youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
+      /(?:youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
+      /[?&]v=([a-zA-Z0-9_-]{11})/,
+    ];
+    for (const re of patterns) {
+      const m = s.match(re);
+      if (m) return m[1];
+    }
+    return null;
+  }
+
+  /* ── YouTube IFrame API ── */
+  function onYouTubeIframeAPIReady() {
+    ytReady = true;
+    ytQueue.forEach(fn => fn());
+    ytQueue = [];
+  }
+  function whenYTReady(fn) {
+    if (ytReady) fn(); else ytQueue.push(fn);
+  }
+
+  let previewDebounce = null;
+  function onVideoInput() {
+    clearTimeout(previewDebounce);
+    previewDebounce = setTimeout(() => {
+      const id = extractVideoId(document.getElementById("videoInput").value);
+      const box = document.getElementById("previewBox");
+      if (!id) { box.style.display = "none"; previewVideoId = null; return; }
+      previewVideoId = id;
+      box.style.display = "block";
+      document.getElementById("previewTitle").textContent = "영상 정보를 불러오는 중...";
+      fetchTitle(id).then(title => {
+        document.getElementById("previewTitle").textContent = title || "유튜브 영상 (제목을 불러오지 못했어요)";
+      });
+      whenYTReady(() => {
+        if (!previewPlayer) {
+          previewPlayer = new YT.Player("previewPlayer", {
+            videoId: id,
+            playerVars: { rel: 0 },
+          });
+        } else {
+          previewPlayer.cueVideoById(id);
+        }
+      });
+    }, 400);
+  }
+
+  async function fetchTitle(videoId) {
+    try {
+      const res = await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent("https://www.youtube.com/watch?v=" + videoId)}&format=json`);
+      if (!res.ok) throw new Error("bad response");
+      const data = await res.json();
+      return data.title;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /* ── 알람 저장/수정 ── */
+  function saveAlarm() {
+    const videoInputEl = document.getElementById("videoInput");
+    const videoId = extractVideoId(videoInputEl.value);
+    const time = document.getElementById("timeInput").value;
+    if (!videoId) { alert("올바른 유튜브 링크 또는 영상 ID를 입력해 주세요."); return; }
+    if (!time) { alert("알람 시간을 선택해 주세요."); return; }
+
+    const alarmData = {
+      videoId,
+      time,
+      days: getSelectedDays(),
+      label: document.getElementById("labelInput").value.trim(),
+      fade: document.getElementById("fadeInput").checked,
+      enabled: true,
+      snoozeUntil: null,
+      lastFiredMinuteKey: null,
+      title: document.getElementById("previewTitle").textContent || "",
+    };
+
+    if (editingId) {
+      const idx = alarms.findIndex(a => a.id === editingId);
+      if (idx !== -1) alarms[idx] = { ...alarms[idx], ...alarmData };
+      cancelEdit();
+    } else {
+      alarmData.id = Date.now();
+      alarms.push(alarmData);
+    }
+    persist();
+    renderList();
+    resetForm();
+  }
+
+  function resetForm() {
+    document.getElementById("videoInput").value = "";
+    document.getElementById("timeInput").value = "";
+    document.getElementById("labelInput").value = "";
+    document.getElementById("fadeInput").checked = true;
+    document.getElementById("previewBox").style.display = "none";
+    setSelectedDays([]);
+  }
+
+  function editAlarm(id) {
+    const a = alarms.find(x => x.id === id);
+    if (!a) return;
+    editingId = id;
+    document.getElementById("videoInput").value = a.videoId;
+    onVideoInput();
+    document.getElementById("timeInput").value = a.time;
+    document.getElementById("labelInput").value = a.label || "";
+    document.getElementById("fadeInput").checked = a.fade !== false;
+    setSelectedDays(a.days || []);
+    document.getElementById("saveBtn").textContent = "알람 수정 완료";
+    document.getElementById("cancelEditLink").style.display = "block";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function cancelEdit() {
+    editingId = null;
+    document.getElementById("saveBtn").textContent = "알람 저장";
+    document.getElementById("cancelEditLink").style.display = "none";
+    resetForm();
+  }
+
+  function deleteAlarm(id) {
+    if (!confirm("이 알람을 삭제할까요?")) return;
+    alarms = alarms.filter(a => a.id !== id);
+    persist();
+    renderList();
+  }
+
+  function toggleAlarmEnabled(id) {
+    const a = alarms.find(x => x.id === id);
+    if (!a) return;
+    a.enabled = !a.enabled;
+    a.snoozeUntil = null;
+    persist();
+    renderList();
+  }
+
+  function formatDays(days) {
+    if (!days || days.length === 0) return "한 번만";
+    if (days.length === 7) return "매일";
+    if (days.length === 5 && [1,2,3,4,5].every(d => days.includes(d))) return "평일";
+    if (days.length === 2 && [0,6].every(d => days.includes(d))) return "주말";
+    return days.map(d => DAY_LABELS[d]).join(",");
+  }
+
+  function renderList() {
+    const list = document.getElementById("alarmList");
+    const empty = document.getElementById("emptyMsg");
+    list.innerHTML = "";
+    const sorted = [...alarms].sort((a, b) => a.time.localeCompare(b.time));
+    empty.style.display = sorted.length ? "none" : "block";
+
+    sorted.forEach(a => {
+      const row = document.createElement("div");
+      row.className = "alarm-row" + (a.enabled ? "" : " disabled");
+      row.innerHTML = `
+        <img class="alarm-thumb" src="https://img.youtube.com/vi/${a.videoId}/mqdefault.jpg" alt="" />
+        <div class="alarm-main">
+          <div class="alarm-time">${a.time}</div>
+          <div class="alarm-meta">${formatDays(a.days)}${a.label ? " · " + escapeHtml(a.label) : ""}</div>
+        </div>
+        <div class="alarm-actions">
+          <button class="icon-btn" title="수정" onclick="editAlarm(${a.id})">✏️</button>
+          <button class="icon-btn" title="삭제" onclick="deleteAlarm(${a.id})">🗑️</button>
+          <label class="switch"><input type="checkbox" ${a.enabled ? "checked" : ""} onchange="toggleAlarmEnabled(${a.id})" /><span class="slider"></span></label>
+        </div>
+      `;
+      list.appendChild(row);
+    });
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+
+  /* ── 알람 체크 루프 ── */
+  function pad(n) { return String(n).padStart(2, "0"); }
+  function todayKey(d) { return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`; }
+
+  function checkAlarms() {
+    if (currentRingingAlarm) return;
+    const now = new Date();
+    const hhmm = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    const dow = now.getDay();
+    const minuteKey = `${todayKey(now)}T${hhmm}`;
+    let changed = false;
+
+    for (const a of alarms) {
+      if (!a.enabled) continue;
+
+      if (a.snoozeUntil && Date.now() >= a.snoozeUntil) {
+        a.snoozeUntil = null;
+        changed = true;
+        ring(a);
+        break;
+      }
+      if (a.snoozeUntil) continue;
+
+      const matchesDay = (a.days && a.days.length > 0) ? a.days.includes(dow) : true;
+      if (a.time === hhmm && matchesDay && a.lastFiredMinuteKey !== minuteKey) {
+        a.lastFiredMinuteKey = minuteKey;
+        if (!a.days || a.days.length === 0) a.enabled = false;
+        changed = true;
+        ring(a);
+        break;
+      }
+    }
+    if (changed) { persist(); renderList(); }
+  }
+  setInterval(checkAlarms, 1000);
+
+  /* ── 알람 울림 ── */
+  function ring(alarm) {
+    currentRingingAlarm = alarm;
+    document.getElementById("ringLabel").textContent = alarm.label || alarm.title || "알람";
+    document.getElementById("unmuteHint").style.display = "none";
+    document.getElementById("ringOverlay").classList.add("show");
+
+    clockInterval = setInterval(() => {
+      const now = new Date();
+      document.getElementById("ringClock").textContent =
+        `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    }, 1000);
+
+    requestWakeLock();
+    notify(alarm);
+
+    const startVolume = alarm.fade ? 15 : 100;
+    whenYTReady(() => {
+      if (!ringPlayer) {
+        ringPlayer = new YT.Player("ringPlayer", {
+          videoId: alarm.videoId,
+          playerVars: { autoplay: 1, controls: 1, rel: 0 },
+          events: {
+            onReady: (e) => {
+              e.target.setVolume(startVolume);
+              e.target.playVideo();
+              startFade(alarm);
+            },
+          },
+        });
+      } else {
+        ringPlayer.loadVideoById(alarm.videoId);
+        ringPlayer.setVolume(startVolume);
+        ringPlayer.playVideo();
+        startFade(alarm);
+      }
+    });
+
+    setTimeout(() => {
+      document.getElementById("unmuteHint").style.display = "block";
+    }, 2000);
+  }
+
+  function startFade(alarm) {
+    clearInterval(fadeInterval);
+    if (!alarm.fade) return;
+    let vol = 15;
+    fadeInterval = setInterval(() => {
+      vol = Math.min(100, vol + 5);
+      if (ringPlayer && ringPlayer.setVolume) ringPlayer.setVolume(vol);
+      if (vol >= 100) clearInterval(fadeInterval);
+    }, 1500);
+  }
+
+  function forceUnmute() {
+    if (!ringPlayer) return;
+    try {
+      ringPlayer.unMute();
+      ringPlayer.setVolume(100);
+      ringPlayer.playVideo();
+    } catch (e) {}
+  }
+
+  function stopAlarm() {
+    document.getElementById("ringOverlay").classList.remove("show");
+    clearInterval(clockInterval);
+    clearInterval(fadeInterval);
+    if (ringPlayer && ringPlayer.stopVideo) ringPlayer.stopVideo();
+    releaseWakeLock();
+    currentRingingAlarm = null;
+  }
+
+  function snoozeAlarm() {
+    const a = currentRingingAlarm;
+    stopAlarm();
+    if (a) {
+      a.snoozeUntil = Date.now() + 5 * 60 * 1000;
+      persist();
+    }
+  }
+
+  function notify(alarm) {
+    if ("Notification" in window && Notification.permission === "granted") {
+      try {
+        new Notification("⏰ " + (alarm.label || "알람 시간이에요!"), {
+          body: alarm.title || "유튜브 알람이 울리고 있어요.",
+        });
+      } catch (e) {}
+    }
+  }
+
+  /* ── 화면 꺼짐 방지 ── */
+  const wakeLockToggle = document.getElementById("wakeLockToggle");
+  wakeLockToggle.checked = localStorage.getItem("wakeLockEnabled") === "1";
+  if (wakeLockToggle.checked) requestWakeLock();
+
+  function onWakeLockToggle() {
+    localStorage.setItem("wakeLockEnabled", wakeLockToggle.checked ? "1" : "0");
+    if (wakeLockToggle.checked) requestWakeLock(); else releaseWakeLock();
+  }
+
+  function requestWakeLock() {
+    if (!("wakeLock" in navigator)) return;
+    navigator.wakeLock.request("screen").then(lock => { wakeLock = lock; }).catch(() => {});
+  }
+  function releaseWakeLock() {
+    if (wakeLock) { wakeLock.release().catch(() => {}); wakeLock = null; }
+  }
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible" && (wakeLockToggle.checked || currentRingingAlarm)) {
+      requestWakeLock();
+    }
+  });
+
+  /* ── 알림 권한 ── */
+  if ("Notification" in window && Notification.permission === "default") {
+    Notification.requestPermission();
+  }
+
+  renderList();
+</script>
+</body>
+</html>
